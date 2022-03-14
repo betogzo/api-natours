@@ -23,6 +23,11 @@ const userSchema = new mongoose.Schema({
     ]
   },
   photo: String,
+  role: {
+    type: String,
+    enum: ['user', 'guide', 'guide', 'lead-guide'],
+    default: 'user'
+  },
   password: {
     type: String,
     trim: true,
@@ -41,8 +46,7 @@ const userSchema = new mongoose.Schema({
       "Password and its confirmation don't match"
     ]
   },
-  passwordChangedAt: Date,
-  role: String
+  passwordChangedAt: Date
 });
 
 //encrypting the password before saving it to the DB
