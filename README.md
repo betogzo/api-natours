@@ -9,3 +9,5 @@ express
 mongoose  
 bcryptojs  
 json web authentication  
+protected routes/authorization
+password reset/nodemailer
