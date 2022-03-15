@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
@@ -46,7 +47,9 @@ const userSchema = new mongoose.Schema({
       "Password and its confirmation don't match"
     ]
   },
-  passwordChangedAt: Date
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpiration: Date
 });
 
 //encrypting the password before saving it to the DB
@@ -85,6 +88,20 @@ userSchema.methods.passwordChangedAfter = function(jwtTimeStamp) {
 
   //default: false - means password hasn't changed
   return false;
+};
+
+//generate reset password token
+userSchema.methods.createPasswordResetToken = function() {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+
+  this.passwordResetExpiration = Date.now() + 10 * 60 * 1000;
+
+  return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);

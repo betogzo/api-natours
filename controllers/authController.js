@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appError');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
+const sendEmail = require('./../utils/email');
 
 dotenv.config({ path: './config.env' });
 
@@ -102,3 +103,43 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+//FORGOT PASSWORD
+exports.forgot = catchAsync(async (req, res, next) => {
+  //find the user based on the inputed email
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return next(new AppError('User not found', 404));
+
+  //generate reset token
+  const resetToken = user.createPasswordResetToken();
+  await user.save({ validateBeforeSave: false });
+
+  //send it to user's email
+  const resetURL = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/users/${resetToken}`;
+
+  const message = `Send a PATCH request to ${resetURL} with the new password and its passwordConfirm`;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Password reset instructions (valid for 10 minutes)',
+      message
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset token sent to user email'
+    });
+  } catch (error) {
+    //reseting password token and its expiration in case of error
+    user.passwordResetToken = undefined;
+    user.passwordResetExpiration = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return next(
+      new AppError('There was an error sending the email. Try again', 500)
+    );
+  }
+});
