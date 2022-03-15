@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
   photo: String,
   role: {
     type: String,
-    enum: ['user', 'guide', 'guide', 'lead-guide'],
+    enum: ['user', 'admin', 'guide', 'lead-guide'],
     default: 'user'
   },
   password: {
@@ -63,6 +63,15 @@ userSchema.pre('save', async function(next) {
   //not persisting the password confirmation on the DB
   this.passwordConfirm = undefined;
 
+  next();
+});
+
+//chaning passwordChangedAt when password is updated
+userSchema.pre('save', function(next) {
+  //checking if password wasn't modified or user is new
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000; //ensuring this happens before jwt creation
   next();
 });
 

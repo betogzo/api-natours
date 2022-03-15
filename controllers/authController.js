@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { promisify } = require('util');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
@@ -142,4 +143,36 @@ exports.forgot = catchAsync(async (req, res, next) => {
       new AppError('There was an error sending the email. Try again', 500)
     );
   }
+});
+
+//RESET PASSWORD
+exports.resetPassword = catchAsync(async (req, res, next) => {
+  //1) get user based on the token
+  const hashedToken = crypto
+    .createHash('sha256')
+    .update(req.params.token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpiration: { $gt: Date.now() }
+  });
+
+  //2) reset password if token is valid and user exists
+  if (!user) return next(new AppError('Invalid or expired token', 400));
+
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm;
+  // user.passwordChangedAt = Date.now(); - doing this using 'pre-save' middleware in usermodel
+  user.passwordResetToken = undefined;
+  user.passwordResetExpiration = undefined;
+  await user.save();
+
+  const token = signToken(user.id);
+
+  //3) send jwt to the client
+  res.status(200).json({
+    status: 'success',
+    token
+  });
 });
