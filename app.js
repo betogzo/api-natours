@@ -1,5 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
 const globalErrorHandler = require('./controllers/errorController');
 const AppError = require('./utils/appError');
@@ -9,7 +10,7 @@ const userRouter = require('./routes/userRoutes');
 
 const app = express();
 
-// 1) MIDDLEWARES
+// 1) GLOBAL MIDDLEWARES
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -21,6 +22,9 @@ app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
+
+//rate-limit (block too many requests)
+
 
 // 3) ROUTES
 app.use('/api/v1/tours', tourRouter);

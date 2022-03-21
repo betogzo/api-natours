@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { promisify } = require('util');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
@@ -15,6 +16,19 @@ const signToken = id => {
   });
 };
 
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+
+  res.status(statusCode).json({
+    //sending the authentication token to the new user
+    status: 'success',
+    token,
+    data: {
+      user
+    }
+  });
+};
+
 //SIGNUP
 exports.signup = catchAsync(async (req, res) => {
   const newUser = await User.create({
@@ -28,16 +42,7 @@ exports.signup = catchAsync(async (req, res) => {
   });
 
   //generating authentication token
-  const token = signToken(newUser._id);
-
-  res.status(200).json({
-    //sending the authentication token to the new user
-    status: 'success',
-    token,
-    data: {
-      user: newUser
-    }
-  });
+  createSendToken(newUser, 201, res);
 });
 
 //LOGIN
@@ -55,14 +60,8 @@ exports.login = catchAsync(async (req, res, next) => {
   if (!user || !(await user.correctPassword(password, user.password)))
     return next(new AppError('Invalid email or password', 401));
 
-  //generating authentication token
-  const token = signToken(user.id);
-
-  //3) send jwt to the client
-  res.status(200).json({
-    status: 'success',
-    token
-  });
+  //generating authentication token and sending it to user
+  createSendToken(user, 200, res);
 });
 
 //PROTECT
@@ -84,6 +83,10 @@ exports.protect = catchAsync(async (req, res, next) => {
   //3) Check if the user (token owner) still exists
   const currentUser = await User.findById(decoded.id);
   if (!currentUser) return next(new AppError('The user no longer exists', 401));
+
+  //3.1) check if users is still active
+  if (!currentUser.active)
+    return next(new AppError('This user is no longer active', 401));
 
   //4) Check if user changed password after token signing
   if (currentUser.passwordChangedAfter(decoded.iat))
@@ -118,7 +121,7 @@ exports.forgot = catchAsync(async (req, res, next) => {
   //send it to user's email
   const resetURL = `${req.protocol}://${req.get(
     'host'
-  )}/api/v1/users/${resetToken}`;
+  )}/api/v1/users/reset-password/${resetToken}`;
 
   const message = `Send a PATCH request to ${resetURL} with the new password and its passwordConfirm`;
 
@@ -168,11 +171,24 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetExpiration = undefined;
   await user.save();
 
-  const token = signToken(user.id);
+  // 3) sending login token to user
+  createSendToken(user, 200, res);
+});
 
-  //3) send jwt to the client
-  res.status(200).json({
-    status: 'success',
-    token
-  });
+//UPDATE PASSWORD
+exports.updatePassword = catchAsync(async (req, res, next) => {
+  // 1) get user from collection
+  const user = await User.findById(req.user.id).select('+password');
+
+  // 2) check if sumbited current password is valid
+  if (!(await user.correctPassword(req.body.currentPassword, user.password)))
+    return next(new AppError('Current password is not valid', 401));
+
+  // 3) changing the password
+  user.password = req.body.newPassword;
+  user.passwordConfirm = req.body.newPasswordConfirm;
+  await user.save();
+
+  // 3) sending login token to user
+  createSendToken(user, 200, res);
 });

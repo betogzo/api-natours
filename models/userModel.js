@@ -49,7 +49,12 @@ const userSchema = new mongoose.Schema({
   },
   passwordChangedAt: Date,
   passwordResetToken: String,
-  passwordResetExpiration: Date
+  passwordResetExpiration: Date,
+  active: {
+    type: Boolean,
+    default: true,
+    select: false
+  }
 });
 
 //encrypting the password before saving it to the DB
@@ -66,12 +71,18 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
-//chaning passwordChangedAt when password is updated
+//changing passwordChangedAt when password is updated/reset
 userSchema.pre('save', function(next) {
   //checking if password wasn't modified or user is new
   if (!this.isModified('password') || this.isNew) return next();
 
   this.passwordChangedAt = Date.now() - 1000; //ensuring this happens before jwt creation
+  next();
+});
+
+//limiting queries to only active users
+userSchema.pre(/^find/, function(next) {
+  this.find({ active: { $ne: false } });
   next();
 });
 
