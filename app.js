@@ -2,6 +2,8 @@ const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
 
 const globalErrorHandler = require('./controllers/errorController');
 const AppError = require('./utils/appError');
@@ -21,6 +23,18 @@ if (process.env.NODE_ENV === 'development') {
 
 //body-parser
 app.use(express.json({ limit: '10kb' }));
+
+//sanitizing requests in order to prevent nosql injection attacks
+app.use(
+  mongoSanitize({
+    onSanitize: () => {
+      console.error('Request/query not allowed. Nice try ;)');
+    }
+  })
+);
+
+//data sanitizing against XSS attacks
+app.use(xss());
 
 //serving static files
 app.use(express.static(`${__dirname}/public`));
