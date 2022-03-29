@@ -42,15 +42,19 @@ exports.getAllTours = catchAsync(async (req, res, next) => {
 exports.getTour = catchAsync(async (req, res, next) => {
   let tour;
 
-  //sending 404 error if !tour
-  if (!tour) return next(new AppError('Invalid ID, no tour found', 404));
-
   //getting tour by slug or _id
   if (req.params.id.includes('-')) {
-    tour = await Tour.find({ slug: req.params.id });
+    tour = await Tour.find({ slug: req.params.id })
+      .populate('guides', 'name email')
+      .populate('reviews');
   } else {
-    tour = await Tour.findById(req.params.id);
+    tour = await Tour.findById(req.params.id)
+      .populate('guides', 'name email')
+      .populate('reviews');
   }
+
+  //sending 404 error if !tour
+  if (!tour) return next(new AppError('Invalid ID, no tour found', 404));
 
   res.status(200).json({
     status: 'success',

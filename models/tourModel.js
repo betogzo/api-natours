@@ -1,6 +1,8 @@
+const { type } = require('express/lib/response');
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const validator = require('validator');
+// const User = require('./userModel');
 
 const tourSchema = new mongoose.Schema(
   {
@@ -86,7 +88,38 @@ const tourSchema = new mongoose.Schema(
     secretTour: {
       type: Boolean,
       default: false
-    }
+    },
+    startLocation: {
+      // GeoJSON
+      type: {
+        type: String,
+        default: 'Point',
+        enum: ['Point']
+      },
+      coordinates: [Number],
+      address: String,
+      description: String
+    },
+    locations: [
+      {
+        type: {
+          type: String,
+          default: 'Point',
+          enum: ['Point']
+        },
+        coordinates: [Number],
+        address: String,
+        description: String,
+        day: Number
+      }
+    ],
+    // guides: Array <- for embedding
+    guides: [
+      {
+        type: mongoose.Schema.ObjectId,
+        ref: 'User'
+      }
+    ]
   },
   {
     //options
@@ -101,11 +134,25 @@ tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7;
 });
 
+//virtual populate (reviews of each tour)
+tourSchema.virtual('reviews', {
+  ref: 'Review',
+  foreignField: 'tour',
+  localField: '_id'
+});
+
 //DOCUMENT MIDDLEWARE - 'pre' runs before .save() and .create() (not before insertMany!)
 tourSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true }); // "this" = the current document
   next();
 });
+
+//document embedding
+// tourSchema.pre('save', async function(next) {
+//   const guidesPromises = this.guides.map(async id => await User.findById(id));
+//   this.guides = await Promise.all(guidesPromises);
+//   next();
+// });
 
 //QUERY MIDDLEWARE - "this" = current query
 //reg. expression to any word starting with "find" (find, findOne etc)
