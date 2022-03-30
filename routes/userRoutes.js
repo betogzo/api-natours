@@ -23,13 +23,24 @@ router
     authController.protect,
     authController.restrictTo('admin'),
     userController.getAllUsers
-  )
-  .post(userController.createUser);
+  );
 
 router
   .route('/:id')
-  .get(userController.getUser)
-  .patch(userController.updateUser)
-  .delete(userController.deleteUser);
+  .get(
+    authController.protect,
+    authController.restrictTo('admin'),
+    userController.getUser
+  )
+  .patch(
+    authController.protect,
+    authController.restrictTo('admin'),
+    userController.updateUser
+  )
+  .delete(
+    authController.protect,
+    authController.restrictTo('admin'),
+    userController.deleteUser
+  );
 
 module.exports = router;
