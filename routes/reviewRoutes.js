@@ -5,28 +5,27 @@ const reviewController = require('./../controllers/reviewController');
 const router = express.Router({ mergeParams: true });
 //mergeParams -> accept params coming from another route (tours, for example, which is nested to this one)
 
+router.use(authController.protect);
+
 router
   .route('/')
   .post(
-    authController.protect,
     authController.restrictTo('user'),
     reviewController.setTourAndUserIds,
     reviewController.createReview
   )
-  .get(
-    authController.protect,
-    authController.restrictTo('admin'),
-    reviewController.getAllReviews
-  );
+  .get(authController.restrictTo('admin'), reviewController.getAllReviews);
 
 router
   .route('/:id')
-  .get(authController.protect, reviewController.getReview)
+  .get(reviewController.getReview)
   .delete(
-    authController.protect,
-    authController.restrictTo('admin'),
+    authController.restrictTo('user', 'admin'),
     reviewController.deleteReview
   )
-  .patch(reviewController.updateReview);
+  .patch(
+    authController.restrictTo('user', 'admin'),
+    reviewController.updateReview
+  );
 
 module.exports = router;
