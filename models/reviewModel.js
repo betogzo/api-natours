@@ -21,10 +21,10 @@ const reviewSchema = new mongoose.Schema(
       ref: 'Tour',
       required: [true, 'Every review must belong to a tour']
     },
-    author: {
+    user: {
       type: mongoose.Schema.ObjectId,
       ref: 'User',
-      required: [true, 'Every review must have an author']
+      required: [true, 'Every review must have an author/user']
     }
   },
   {
@@ -40,7 +40,7 @@ reviewSchema.pre(/^find/, function(next) {
   //   select: 'name'
   // }).populate('author', 'name email');
 
-  this.populate('author', 'name photo');
+  this.populate('user', 'name photo');
   next();
 });
 

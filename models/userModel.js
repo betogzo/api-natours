@@ -57,28 +57,28 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-//encrypting the password before saving it to the DB
-userSchema.pre('save', async function(next) {
-  //only run this if password was actually modified
-  if (!this.isModified('password')) return next();
+// //encrypting the password before saving it to the DB
+// userSchema.pre('save', async function(next) {
+//   //only run this if password was actually modified
+//   if (!this.isModified('password')) return next();
 
-  //encrypting the password
-  this.password = await bcrypt.hash(this.password, 12);
+//   //encrypting the password
+//   this.password = await bcrypt.hash(this.password, 12);
 
-  //not persisting the password confirmation on the DB
-  this.passwordConfirm = undefined;
+//   //not persisting the password confirmation on the DB
+//   this.passwordConfirm = undefined;
 
-  next();
-});
+//   next();
+// });
 
-//changing passwordChangedAt when password is updated/reset
-userSchema.pre('save', function(next) {
-  //checking if password wasn't modified or user is new
-  if (!this.isModified('password') || this.isNew) return next();
+// //changing passwordChangedAt when password is updated/reset
+// userSchema.pre('save', function(next) {
+//   //checking if password wasn't modified or user is new
+//   if (!this.isModified('password') || this.isNew) return next();
 
-  this.passwordChangedAt = Date.now() - 1000; //ensuring this happens before jwt creation
-  next();
-});
+//   this.passwordChangedAt = Date.now() - 1000; //ensuring this happens before jwt creation
+//   next();
+// });
 
 //limiting queries to only active users
 userSchema.pre(/^find/, function(next) {
