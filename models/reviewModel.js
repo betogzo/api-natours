@@ -73,6 +73,9 @@ reviewSchema.statics.calcAverageRatings = async function(tourId) {
   }
 };
 
+//creating an index to prevent a user to create multiple reviews on the same tour
+reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
+
 //calling calcAverageRatings func after CREATING a new review
 reviewSchema.post('save', function() {
   //'this' points to current review. 'constructor' points the current Model (Review)
