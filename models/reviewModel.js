@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const AppError = require('./../utils/appError');
+const Tour = require('./tourModel');
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -42,6 +42,53 @@ reviewSchema.pre(/^find/, function(next) {
 
   this.populate('user', 'name photo');
   next();
+});
+
+//static function to calculate tours ratingsAverage
+reviewSchema.statics.calcAverageRatings = async function(tourId) {
+  const stats = await this.aggregate([
+    {
+      $match: { tour: tourId }
+    },
+    {
+      $group: {
+        _id: '$tour',
+        nRating: { $sum: 1 },
+        averageRating: { $avg: '$rating' }
+      }
+    }
+  ]);
+
+  //updating the tour document
+  if (stats.length > 0) {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: stats[0].averageRating
+    });
+  } else {
+    await Tour.findByIdAndUpdate(tourId, {
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5
+    });
+  }
+};
+
+//calling calcAverageRatings func after CREATING a new review
+reviewSchema.post('save', function() {
+  //'this' points to current review. 'constructor' points the current Model (Review)
+  this.constructor.calcAverageRatings(this.tour);
+});
+
+//trick to pass data to a pre middleware to a post middleware 
+reviewSchema.pre(/^findOneAnd/, async function(next) {
+  //creating a new property to store it
+  this.r = await this.clone().findOne();
+  next();
+});
+
+//calling calcAverageRatings func after UPDATING or DELETING an existent review
+reviewSchema.post(/^findOneAnd/, async function() {
+  await this.r.constructor.calcAverageRatings(this.r.tour);
 });
 
 const Review = mongoose.model('Review', reviewSchema);
