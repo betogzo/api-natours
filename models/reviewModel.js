@@ -79,7 +79,7 @@ reviewSchema.post('save', function() {
   this.constructor.calcAverageRatings(this.tour);
 });
 
-//trick to pass data to a pre middleware to a post middleware 
+//trick to pass data to a pre middleware to a post middleware
 reviewSchema.pre(/^findOneAnd/, async function(next) {
   //creating a new property to store it
   this.r = await this.clone().findOne();
