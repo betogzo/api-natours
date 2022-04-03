@@ -13,3 +13,5 @@ The course is still ongoing and among the next lessons to come are: file uploads
  - [nodemailer](https://www.npmjs.com/package/nodemailer)
  - [rate-limit](https://www.npmjs.com/package/express-rate-limit)
  - [hpp](https://www.npmjs.com/package/hpp), [helmet](https://www.npmjs.com/package/helmet), [mongo-sanitize](https://www.npmjs.com/package/express-mongo-sanitize) and [xss-clean](https://www.npmjs.com/package/xss-clean) for security and data sanitization
+
+📃 **Full API Documentation**: [click here.](https://documenter.getpostman.com/view/16396526/UVysxG9L)
