@@ -5,6 +5,9 @@ exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
 
+    console.log(req.params.id);
+    console.log(doc);
+
     //sending 404 error if !doc
     if (!doc) return next(new AppError('Invalid ID, no document found', 404));
 
