@@ -1,6 +1,7 @@
 const catchAsync = require('./../utils/catchAsync');
 const Review = require('../models/reviewModel');
 const factory = require('./handlerFactory');
+const AppError = require('../utils/appError');
 
 //middleware to grab tour and user id before createReview
 exports.setTourAndUserIds = async (req, res, next) => {
@@ -38,6 +39,19 @@ exports.getReview = catchAsync(async (req, res, next) => {
       review
     }
   });
+});
+
+exports.checkIfAuthorMatch = catchAsync(async (req, res, next) => {
+  const review = await Review.findById(req.params.id);
+
+  if (req.user.role === 'user' && review.user.id !== req.user.id)
+    return next(
+      new AppError(
+        `Permission denied. You're not the author of this review!`,
+        403
+      )
+    );
+  next();
 });
 
 exports.deleteReview = factory.deleteOne(Review);

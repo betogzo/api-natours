@@ -21,10 +21,12 @@ router
   .get(reviewController.getReview)
   .delete(
     authController.restrictTo('user', 'admin'),
+    reviewController.checkIfAuthorMatch,
     reviewController.deleteReview
   )
   .patch(
     authController.restrictTo('user', 'admin'),
+    reviewController.checkIfAuthorMatch,
     reviewController.updateReview
   );
 
