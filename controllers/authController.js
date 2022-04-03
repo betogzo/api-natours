@@ -41,7 +41,11 @@ const createSendToken = (user, statusCode, res) => {
 };
 
 //SIGNUP
-exports.signup = catchAsync(async (req, res) => {
+exports.signup = catchAsync(async (req, res, next) => {
+  //preventing bad boy to create a new admin or guide/lead-guide
+  if (req.body.role !== 'user')
+    return next(new AppError(`You can't sign up as an admin!`, 403));
+
   const newUser = await User.create({
     name: req.body.name,
     email: req.body.email,
