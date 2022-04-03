@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -53,7 +54,7 @@ app.use(
 );
 
 //serving static files
-app.use(express.static(`${__dirname}/public`));
+app.use(express.static(__dirname, 'public'));
 
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
